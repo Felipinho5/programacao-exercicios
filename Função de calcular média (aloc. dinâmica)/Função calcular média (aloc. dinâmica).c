@@ -4,7 +4,6 @@
 
 double media(double v[], int tam);
 
-
 int main()
 {
     setlocale(LC_ALL, "Portuguese");
