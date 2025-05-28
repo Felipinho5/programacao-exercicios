@@ -1,8 +1,11 @@
+from copy import deepcopy
+
+
 class Matriz:
     resultante = [
-        [10],
-        [10],
-        [10],
+        [63],
+        [55],
+        [4],
     ]
 
     def __init__(self, matriz):
@@ -11,16 +14,16 @@ class Matriz:
 
         self.matriz = matriz
 
-    def substituir_coluna_com_resultante(self, coluna):
-        matriz_subst = self.matriz
+    def substituir_coluna_com_resultante(self, num_coluna):
+        matriz_subst = deepcopy(self.matriz)
 
         for i in range(3):
-            matriz_subst[i][coluna] = self.resultante[i][0]
+            matriz_subst[i][num_coluna] = self.resultante[i][0]
 
-        return matriz_subst
+        return self.__class__(matriz_subst)
 
     def sarrus(self):
-        matriz_sarrus = self.matriz
+        matriz_sarrus = deepcopy(self.matriz)
 
         for linha in matriz_sarrus:
             linha.append(linha[0])
@@ -32,7 +35,6 @@ class Matriz:
         soma_diagonais = 0
 
         matriz_sarrus = self.sarrus()
-        print(matriz_sarrus)
 
         # Principais
         for i in range(3):
@@ -54,6 +56,11 @@ class Matriz:
 
         return soma_diagonais
 
+    def cramer(self):
+        det_p = self.determinante()
+        det_vars = [self.substituir_coluna_com_resultante(i).determinante() for i in range(3)]
+        return tuple(map(lambda det_var: det_var / det_p, det_vars))
+
 
 m1 = Matriz([
     [1, 0, 0],
@@ -61,4 +68,4 @@ m1 = Matriz([
     [0, 0, 1],
 ])
 
-print(m1.determinante())
+print(m1.cramer())
