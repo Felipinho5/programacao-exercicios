@@ -1,13 +1,23 @@
 from copy import deepcopy
 
 
-class Matriz:
+class Problema:
+    matriz_restricoes = [
+        [1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5],
+    ]
     resultante = [
         [63],
         [55],
         [4],
     ]
 
+    def matriz_3x3(self, vars):
+        pass
+
+
+class Matriz:
     def __init__(self, matriz):
         if len(matriz) != 3 or any(len(linha) != 3 for linha in matriz):
             raise ValueError("A matriz deve ser 3x3.")
@@ -18,7 +28,7 @@ class Matriz:
         matriz_subst = deepcopy(self.matriz)
 
         for i in range(3):
-            matriz_subst[i][num_coluna] = self.resultante[i][0]
+            matriz_subst[i][num_coluna] = Problema.resultante[i][0]
 
         return self.__class__(matriz_subst)
 
@@ -58,8 +68,17 @@ class Matriz:
 
     def cramer(self):
         det_p = self.determinante()
+
+        if det_p == 0:
+            raise ValueError("A determinante da matriz principal é zero.")
+
         det_vars = [self.substituir_coluna_com_resultante(i).determinante() for i in range(3)]
-        return tuple(map(lambda det_var: det_var / det_p, det_vars))
+        vars = tuple(map(lambda det_var: det_var / det_p, det_vars))
+
+        if any(var < 0 for var in vars):
+            raise ValueError("Desrespeita a não negatividade.")
+
+        return vars
 
 
 m1 = Matriz([
