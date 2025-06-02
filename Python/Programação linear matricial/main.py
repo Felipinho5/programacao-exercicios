@@ -1,6 +1,19 @@
 from copy import deepcopy
 
 
+"""
+Produto 1 = x
+Produto 2 = y
+
+FUNÇÃO OBJETIVO
+Max L = 2x + 5y
+
+SUJEITO A
+3x + 4y <= 200
+9x + 7y <= 300
+"""
+
+
 class Problema:
     def __init__(self, restricoes, resultante):
         self.restricoes = restricoes
@@ -18,6 +31,23 @@ class Problema:
 
 
 class Matriz:
+    def __init__(self, problema, matriz):
+        if any(len(linha) != len(matriz) for linha in matriz):
+            raise ValueError("A matriz deve ser quadrada (i = j).")
+
+        self.problema = problema
+        self.matriz = matriz
+
+    def substituir_coluna_com_resultante(self, num_coluna):
+        matriz_subst = deepcopy(self.matriz)
+
+        for i in range(len(self.matriz)):
+            matriz_subst[i][num_coluna] = self.problema.resultante[i][0]
+
+        return self.__class__(self.problema, matriz_subst)
+
+
+class Matriz_3x3:
     def __init__(self, problema, matriz):
         if len(matriz) != 3 or any(len(linha) != 3 for linha in matriz):
             raise ValueError("A matriz deve ser 3x3.")
@@ -91,7 +121,7 @@ p1 = Problema([
     [10],
 ])
 
-m1 = Matriz(p1, [
+m1 = Matriz_3x3(p1, [
     [1, 0, 0],
     [0, 1, 0],
     [0, 0, 1],
