@@ -32,9 +32,14 @@ class Problema:
 
 
 class MatrizQuadrada(ABC):
-    def __init__(self, problema, matriz, tamanho):
-        if any(len(linha) != tamanho for linha in matriz):
-            raise ValueError(f"A matriz deve ser quadrada ({tamanho}x{tamanho}).")
+    tamanho = None
+
+    def __init__(self, problema, matriz):
+        if not self.tamanho:
+            raise NotImplementedError('Subclasses devem implementar o atributo de classe "tamanho".')
+
+        if any(len(linha) != self.tamanho for linha in matriz):
+            raise ValueError(f"A matriz deve ser quadrada ({self.tamanho}x{self.tamanho}).")
 
         self.problema = problema
         self.matriz = matriz
@@ -42,7 +47,7 @@ class MatrizQuadrada(ABC):
     def substituir_coluna_com_resultante(self, num_coluna):
         matriz_subst = deepcopy(self.matriz)
 
-        for i in range(len(self.matriz)):
+        for i in range(self.tamanho):
             matriz_subst[i][num_coluna] = self.problema.resultante[i][0]
 
         return self.__class__(self.problema, matriz_subst)
@@ -57,7 +62,7 @@ class MatrizQuadrada(ABC):
         if det_p == 0:
             raise ValueError("A determinante da matriz principal é zero.")
 
-        det_vars = [self.substituir_coluna_com_resultante(i).determinante() for i in range(len(self.matriz))]
+        det_vars = [self.substituir_coluna_com_resultante(i).determinante() for i in range(self.tamanho)]
         vars = tuple(map(lambda det_var: det_var / det_p, det_vars))
 
         if any(var < 0 for var in vars):
@@ -67,16 +72,20 @@ class MatrizQuadrada(ABC):
     
 
 class Matriz_2x2(MatrizQuadrada):
+    tamanho = 2
+
     def __init__(self, problema, matriz):
-        super().__init__(problema, matriz, 2)
+        super().__init__(problema, matriz)
 
     def determinante(self):
         return self.matriz[0][0] * self.matriz[1][1] - self.matriz[0][1] * self.matriz[1][0]
     
 
-class Matriz_3x3:
+class Matriz_3x3(MatrizQuadrada):
+    tamanho = 3
+
     def __init__(self, problema, matriz):
-        super().__init__(problema, matriz, 3)
+        super().__init__(problema, matriz)
 
     def sarrus(self):
         matriz_sarrus = deepcopy(self.matriz)
