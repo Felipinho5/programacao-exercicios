@@ -16,19 +16,42 @@ SUJEITO A
 
 
 class Problema:
-    def __init__(self, restricoes, resultante):
-        self.restricoes = restricoes
-        self.adicionar_folgas_nas_restricoes()
-        self.resultante = resultante
+    def __init__(self, restr_esq, restr_dir):
+        self.restr_esq = self.adicionar_folgas(restr_esq)
+        self.restr_dir = restr_dir
+        self.combinacoes_variaveis = self.montar_combinacoes_variaveis()
+        self.solucoes = []
 
-    def adicionar_folgas_nas_restricoes(self):
-        for i, linha in enumerate(self.restricoes):
-            for j in range(len(self.restricoes)):
+    def adicionar_folgas(self, restr_esq):
+        for i, linha in enumerate(restr_esq):
+            for j in range(len(restr_esq)):
                 folga = 1 if i == j else 0
                 linha.append(folga)
 
-    def matriz_3x3(self, vars):
-        pass
+        return restr_esq
+
+    def montar_combinacoes_variaveis(self):
+        combinacoes = set()
+        for i in range(len(self.restr_esq[0])):
+            for j in range(len(self.restr_esq[0])):
+                if not (i == j):
+                    combinacao = tuple(sorted([i, j]))
+                    combinacoes.add(combinacao)
+    
+    def montar_matriz_combinacao(self, combinacao):
+        matriz = [[0 for _ in range(len(combinacao))] for _ in range(len(self.restr_esq))]
+
+        for i in range(len(self.restr_esq)):
+            for j, num_var in enumerate(combinacao):
+                matriz[i][j] = self.restr_esq[i][num_var]
+
+        return Matriz_2x2(self, matriz)
+
+    def obter_solucao_sugerida(self, combinacao):
+        matriz = self.montar_matriz_combinacao(combinacao)
+        resultados = matriz.cramer()
+        solucao = zip(combinacao, resultados)
+        return solucao
 
 
 class MatrizQuadrada(ABC):
@@ -44,11 +67,11 @@ class MatrizQuadrada(ABC):
         self.problema = problema
         self.matriz = matriz
 
-    def substituir_coluna_com_resultante(self, num_coluna):
+    def substituir_coluna_com_restr_dir(self, num_coluna):
         matriz_subst = deepcopy(self.matriz)
 
         for i in range(self.tamanho):
-            matriz_subst[i][num_coluna] = self.problema.resultante[i][0]
+            matriz_subst[i][num_coluna] = self.problema.restr_dir[i][0]
 
         return self.__class__(self.problema, matriz_subst)
     
@@ -62,13 +85,13 @@ class MatrizQuadrada(ABC):
         if det_p == 0:
             raise ValueError("A determinante da matriz principal é zero.")
 
-        det_vars = [self.substituir_coluna_com_resultante(i).determinante() for i in range(self.tamanho)]
-        vars = tuple(map(lambda det_var: det_var / det_p, det_vars))
+        det_variaveis = [self.substituir_coluna_com_restr_dir(i).determinante() for i in range(self.tamanho)]
+        variaveis = tuple(map(lambda det_var: det_var / det_p, det_variaveis))
 
-        if any(var < 0 for var in vars):
+        if any(var < 0 for var in variaveis):
             raise ValueError("Desrespeita a não negatividade.")
 
-        return vars
+        return variaveis
     
 
 class Matriz_2x2(MatrizQuadrada):
@@ -102,19 +125,19 @@ class Matriz_3x3(MatrizQuadrada):
         matriz_sarrus = self.sarrus()
 
         # Principais
-        for i in range(3):
+        for i in range(self.tamanho):
             diagonal = 1
 
-            for j in range(3):
+            for j in range(self.tamanho):
                 diagonal *= matriz_sarrus[j][j+i]
 
             soma_diagonais += diagonal
 
         # Secundárias
-        for i in range(3):
+        for i in range(self.tamanho):
             diagonal = 1
 
-            for j in range(3):
+            for j in range(self.tamanho):
                 diagonal *= matriz_sarrus[j][-j-i-1]
 
             soma_diagonais -= diagonal
@@ -123,20 +146,17 @@ class Matriz_3x3(MatrizQuadrada):
 
 
 p1 = Problema([
-    [2, 3],
-    [2, 3],
-    [2, 3],
+    [3, 4],
+    [9, 7],
 ], [
-    [10],
-    [10],
-    [10],
+    [200],
+    [300],
 ])
 
-m1 = Matriz_3x3(p1, [
-    [1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
+m1 = Matriz_2x2(p1, [
+    [1, 0],
+    [0, 1],
 ])
 
+mat = p1.montar_matriz_combinacao((0, 3))
 print(m1.cramer())
-print(p1.restricoes)
