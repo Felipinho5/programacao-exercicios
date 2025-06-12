@@ -1,5 +1,6 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
+from pprint import pprint
 
 
 """
@@ -16,11 +17,19 @@ SUJEITO A
 
 
 class Problema:
-    def __init__(self, restr_esq, restr_dir):
+    def __init__(self, *, obj, minimizar=False, maximizar=False, restr_esq, restr_dir):
+        if minimizar == maximizar:
+            raise ValueError("É necessário escolher ou minimizar ou maximizar o objetivo.") 
+        
+        self.obj = obj
+        self.minimizar = minimizar
+        self.maximizar = maximizar
         self.restr_esq = self.adicionar_folgas(restr_esq)
         self.restr_dir = restr_dir
-        self.combinacoes_variaveis = self.montar_combinacoes_variaveis()
-        self.solucoes = []
+        self.combinacoes = self.montar_combinacoes()
+        self.solucoes = self.obter_todas_as_solucoes_sugeridas()
+        self.solucoes_validas = [solucao for solucao in self.solucoes if not isinstance(solucao, ValueError)]
+        self.solucao_otima = self.obter_solucao_otima()
 
     def adicionar_folgas(self, restr_esq):
         for i, linha in enumerate(restr_esq):
@@ -30,13 +39,16 @@ class Problema:
 
         return restr_esq
 
-    def montar_combinacoes_variaveis(self):
+    # SÓ ESTÁ CERTO PARA 2x2
+    def montar_combinacoes(self):
         combinacoes = set()
         for i in range(len(self.restr_esq[0])):
             for j in range(len(self.restr_esq[0])):
                 if not (i == j):
                     combinacao = tuple(sorted([i, j]))
                     combinacoes.add(combinacao)
+
+        return combinacoes
     
     def montar_matriz_combinacao(self, combinacao):
         matriz = [[0 for _ in range(len(combinacao))] for _ in range(len(self.restr_esq))]
@@ -47,11 +59,45 @@ class Problema:
 
         return Matriz_2x2(self, matriz)
 
+    def obter_resultado_obj(self, vars_e_coefs):
+        res = 0
+        for var, coef in vars_e_coefs:
+            if var < len(self.obj):
+                res += coef * self.obj[var]
+
+        return res
+
     def obter_solucao_sugerida(self, combinacao):
         matriz = self.montar_matriz_combinacao(combinacao)
-        resultados = matriz.cramer()
-        solucao = zip(combinacao, resultados)
+
+        try:
+            coeficientes = matriz.cramer()
+            vars_e_coefs = tuple(zip(combinacao, coeficientes))
+
+            solucao = {
+                "variaveis_e_coeficientes": vars_e_coefs,
+                "resultado_obj": self.obter_resultado_obj(vars_e_coefs)
+            }
+
+        except ValueError as e:
+            solucao = e
+
         return solucao
+    
+    def obter_todas_as_solucoes_sugeridas(self):
+        return [self.obter_solucao_sugerida(combinacao) for combinacao in self.combinacoes]
+    
+    def obter_solucao_otima(self):
+        if not self.solucoes_validas:
+            return None
+
+        min_ou_max = None
+        if self.maximizar:
+            min_ou_max = max
+        else:
+            min_ou_max = min
+
+        return min_ou_max(solucao["resultado_obj"] for solucao in self.solucoes_validas)
 
 
 class MatrizQuadrada(ABC):
@@ -86,12 +132,25 @@ class MatrizQuadrada(ABC):
             raise ValueError("A determinante da matriz principal é zero.")
 
         det_variaveis = [self.substituir_coluna_com_restr_dir(i).determinante() for i in range(self.tamanho)]
-        variaveis = tuple(map(lambda det_var: det_var / det_p, det_variaveis))
+        coeficientes = tuple(map(lambda det_var: det_var / det_p, det_variaveis))
 
-        if any(var < 0 for var in variaveis):
+        if any(var < 0 for var in coeficientes):
             raise ValueError("Desrespeita a não negatividade.")
 
-        return variaveis
+        return coeficientes
+    
+    def __str__(self):
+        s = ""
+        for i in range(len(self.matriz)):
+            s += "["
+            for j in range(len(self.matriz[0])):
+                s += str(self.matriz[i][j])
+                if not j == len(self.matriz[0]) - 1:
+                    s += "   "
+                else:
+                    s += "]"
+            s += "\n"
+        return s
     
 
 class Matriz_2x2(MatrizQuadrada):
@@ -145,18 +204,36 @@ class Matriz_3x3(MatrizQuadrada):
         return soma_diagonais
 
 
-p1 = Problema([
-    [3, 4],
-    [9, 7],
-], [
-    [200],
-    [300],
-])
+p1 = Problema(
+    obj = (2, 5),
+    maximizar = True,
 
-m1 = Matriz_2x2(p1, [
-    [1, 0],
-    [0, 1],
-])
+    restr_esq = [
+        [3, 4],
+        [9, 7],
+    ],
+    
+    restr_dir = [
+        [200],
+        [300],
+    ],
+)
 
-mat = p1.montar_matriz_combinacao((0, 3))
-print(m1.cramer())
+p2 = Problema(
+    obj = (3, 2),
+    maximizar = True,
+
+    restr_esq = [
+        [5, 7],
+        [6, 5],
+        [1, 0],
+    ],
+    
+    restr_dir = [
+        [35],
+        [30],
+        [3],
+    ],
+)
+
+print(p1.solucao_otima)
