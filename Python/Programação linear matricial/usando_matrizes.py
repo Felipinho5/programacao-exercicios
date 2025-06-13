@@ -113,13 +113,69 @@ class Problema:
         if not self.solucoes_validas:
             return None
 
-        min_ou_max = None
-        if self.maximizar:
-            min_ou_max = max
-        else:
-            min_ou_max = min
+        solucao_otima = None
 
-        return min_ou_max(solucao["resultado_obj"] for solucao in self.solucoes_validas)
+        for solucao in self.solucoes_validas:
+            if (
+                solucao_otima is None or
+                self.maximizar and solucao_otima["resultado_obj"] < solucao["resultado_obj"] or
+                self.minimizar and solucao_otima["resultado_obj"] > solucao["resultado_obj"]
+            ):
+                solucao_otima = solucao
+
+        return solucao_otima
+    
+    def __str__(self):
+        s = "======================================\n\n"
+
+        min_ou_max = "Min" if self.minimizar else "Max"
+        s += "FUNÇÃO OBJETIVO:\n"
+        s += f"{min_ou_max} "
+
+        for i, coef in enumerate(self.obj):
+            s += f"{coef}*x{i+1}"
+
+            if i < len(self.obj) - 1:
+                s += " + "
+
+        s += "\n\n"
+        s += "SUJEITO A\n"
+
+        for i, linha in enumerate(self.restr_esq):
+            for j, coef in enumerate(linha):
+                s += f"{coef}*x{self.variaveis[j] + 1}"
+                if j < len(linha) - 1:
+                    s += " + "
+            s += f" <= {self.restr_dir[i][0]}\n"
+
+        s += "\n"
+        s += "COMBINAÇÕES POSSÍVEIS\n"
+
+        for i, combinacao in enumerate(self.combinacoes):
+            s += f"Combinação {i + 1}: {', '.join(f'x{var + 1}' for var in combinacao)}\n"
+        
+        s += "\n"
+        s += "SOLUÇÕES SUGERIDAS\n"
+
+        for i, solucao in enumerate(self.solucoes):
+            if isinstance(solucao, ValueError):
+                s += f"Solução {i + 1}: {solucao}\n"
+            else:
+                vars_e_coef = ", ".join(f"x{var + 1} = {coef}" for var, coef in solucao["variaveis_e_coeficientes"])
+                s += f"Solução {i + 1}: {vars_e_coef} | Resultado função obj.: {solucao['resultado_obj']}\n"
+
+        s += "\n"
+        s += "SOLUÇÃO ÓTIMA\n"
+
+        if self.solucao_otima:
+            vars_e_coef = ", ".join(f"x{var + 1} = {coef}" for var, coef in self.solucao_otima["variaveis_e_coeficientes"])
+            s += f"{vars_e_coef} | Resultado função obj.: {self.solucao_otima['resultado_obj']}\n"
+        else:
+            s += "Nenhuma solução válida encontrada.\n"
+        
+        s += "\n"
+        s += "======================================\n"
+        return s
 
 
 class MatrizQuadrada(ABC):
@@ -258,5 +314,5 @@ p2 = Problema(
     ],
 )
 
-print(p1.solucao_otima)
-print(p2.solucao_otima)
+print(p1)
+print(p2)
