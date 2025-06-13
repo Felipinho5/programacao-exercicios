@@ -1,6 +1,6 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
-from pprint import pprint
+from math import factorial as fatorial
 
 
 """
@@ -26,6 +26,7 @@ class Problema:
         self.maximizar = maximizar
         self.restr_esq = self.adicionar_folgas(restr_esq)
         self.restr_dir = restr_dir
+        self.variaveis = [i for i in range(len(self.restr_esq[0]))]
         self.combinacoes = self.montar_combinacoes()
         self.solucoes = self.obter_todas_as_solucoes_sugeridas()
         self.solucoes_validas = [solucao for solucao in self.solucoes if not isinstance(solucao, ValueError)]
@@ -39,17 +40,37 @@ class Problema:
 
         return restr_esq
 
-    # SÓ ESTÁ CERTO PARA 2x2
+    def obter_numero_combinacoes(self):
+        n = len(self.restr_esq[0])
+        p = len(self.restr_dir)
+        return fatorial(n) // (fatorial(p) * fatorial(n-p))
+
     def montar_combinacoes(self):
-        combinacoes = set()
-        for i in range(len(self.restr_esq[0])):
-            for j in range(len(self.restr_esq[0])):
-                if not (i == j):
-                    combinacao = tuple(sorted([i, j]))
-                    combinacoes.add(combinacao)
+        numero_combinacoes = self.obter_numero_combinacoes()
+        combinacoes = []
+
+        combinacao = [i for i in range(len(self.restr_dir))]
+        k = 0
+
+        while True:
+            combinacoes.append(combinacao[:])
+
+            if len(combinacoes) == numero_combinacoes:
+                break
+
+            combinacao[-1-k] += 1
+
+            while combinacao[-1-k] >= len(self.variaveis) - k:
+                k += 1
+                combinacao[-1-k] += 1
+
+            if k > 0:
+                for i in range(len(combinacao[-k:])):
+                    combinacao[-k+i] = combinacao[-1-k] + 1 + i
+                k = 0
 
         return combinacoes
-    
+
     def montar_matriz_combinacao(self, combinacao):
         matriz = [[0 for _ in range(len(combinacao))] for _ in range(len(self.restr_esq))]
 
@@ -57,7 +78,8 @@ class Problema:
             for j, num_var in enumerate(combinacao):
                 matriz[i][j] = self.restr_esq[i][num_var]
 
-        return Matriz_2x2(self, matriz)
+        ClasseMatriz = Matriz_2x2 if len(matriz) == 2 else Matriz_3x3
+        return ClasseMatriz(self, matriz)
 
     def obter_resultado_obj(self, vars_e_coefs):
         res = 0
@@ -237,3 +259,17 @@ p2 = Problema(
 )
 
 print(p1.solucao_otima)
+print(p2.solucao_otima)
+
+'''
+0 1 2
+0 1 3
+0 1 4
+0 2 3
+0 2 4
+0 3 4
+1 2 3
+1 2 4
+1 3 4
+2 3 4
+'''
