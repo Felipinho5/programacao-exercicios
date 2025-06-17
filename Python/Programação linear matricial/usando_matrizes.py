@@ -146,7 +146,7 @@ class Problema:
                 s += f"{coef}*x{self.variaveis[j] + 1}"
                 if j < len(linha) - 1:
                     s += " + "
-            s += f" <= {self.restr_dir[i][0]}\n"
+            s += f" <= {self.restr_dir[i]}\n"
 
         s += "\n"
         s += "COMBINAÇÕES POSSÍVEIS\n"
@@ -195,7 +195,7 @@ class MatrizQuadrada(ABC):
         matriz_subst = deepcopy(self.matriz)
 
         for i in range(self.tamanho):
-            matriz_subst[i][num_coluna] = self.problema.restr_dir[i][0]
+            matriz_subst[i][num_coluna] = self.problema.restr_dir[i]
 
         return self.__class__(self.problema, matriz_subst)
     
@@ -292,8 +292,8 @@ p1 = Problema(
     ],
     
     restr_dir = [
-        [200],
-        [300],
+        200,
+        300,
     ],
 )
 
@@ -308,11 +308,27 @@ p2 = Problema(
     ],
     
     restr_dir = [
-        [35],
-        [30],
-        [3],
+        35,
+        30,
+        3,
     ],
+)
+
+p3 = Problema(
+    obj = (30_000, 10_000),
+    maximizar = True,
+
+    restr_esq = [
+        [20, 10],
+        [-1, -1], # Inverter sinal porque é um >= e deve ir para <=
+    ],
+
+    restr_dir = [
+        80,
+        -5, # Inverter sinal porque é um >= e deve ir para <=
+    ]
 )
 
 print(p1)
 print(p2)
+print(p3)
